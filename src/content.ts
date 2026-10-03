@@ -1,5 +1,36 @@
 const vids = document.getElementsByTagName("video");
 
+const sRGBToPerceivedLightness = (sR: number, sG: number, sB: number) => {
+    // https://stackoverflow.com/questions/596216/formula-to-determine-perceived-brightness-of-rgb-color
+
+    const sRGBToLin = (colorChannel: number) => {
+        if (colorChannel <= 0.04045) {
+            return colorChannel / 12.92;
+        } else {
+            return ((colorChannel + 0.055) / 1.055) ** 2.4
+        }
+    }
+
+    // normalized
+    let vR = sR / 255;
+    let vG = sG / 255;
+    let vB = sB / 255;
+
+    // linearized
+    let lR = sRGBToLin(vR);
+    let lG = sRGBToLin(vG);
+    let lB = sRGBToLin(vB);
+
+    let y = (lR * 0.2126) + (lG * 0.7152) + (lB * 0.0722); // luminance
+
+    // cnvrting to l star for percived lightness
+    if (y <= (216/24389)) {
+        return y * (24389/27);
+    } else {
+        return ((y ** (1/3)) * 116) - 16;
+    }
+}
+
 // there can be more than one video in a page
 for (let vid of vids) {
     const canva = document.createElement("canvas");
@@ -13,24 +44,27 @@ for (let vid of vids) {
     let width = canva.width;
     let height = canva.height;
 
-    let shouldInvert = false;
-
     const updateCanvas: VideoFrameRequestCallback = () => {
         ctx?.drawImage(vid, 0, 0, width, height);
-        // let imgURL = canva.toDataURL();
-        // here do the checking of color and based on that either do invert or not
 
         const imageData = ctx?.getImageData(0, 0, canva.width, canva.height).data;
         if(!imageData) return
-        const clrMap = new Map();
+        
+        let sumOfPL = 0;
 
         for (let i = 0; i < imageData.length; i+= 4) {
             const [r, g, b] = [imageData[i], imageData[i+1], imageData[i+2]];
-            const rgb = `rgb(${r}, ${g}, ${b})`;
-            clrMap.set(rgb, (clrMap.get(rgb) || 0) + 1);
-            // here get the intensity of the rgb, is it bright or not.
+            let perceivedLightness = sRGBToPerceivedLightness(r, g, b);
+            sumOfPL += perceivedLightness;
         }
-        console.log(clrMap);
+
+        let meanPerceivedLightness = sumOfPL / (imageData.length/4);
+
+        if(meanPerceivedLightness > 50) {
+            vid.style.filter = "invert(100%)";
+        } else {
+            vid.style.filter = "";
+        }
 
         vid.requestVideoFrameCallback(updateCanvas);
     };
@@ -41,6 +75,5 @@ for (let vid of vids) {
 
     vid.requestVideoFrameCallback(updateCanvas);
 
-    if(shouldInvert) vid.style.filter = "invert(100%)";
-    else vid.style.filter = "";
+    
 }
