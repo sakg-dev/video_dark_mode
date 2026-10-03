@@ -4,6 +4,6 @@ A sad story of a dev: using vim at 3am and browsing in dark mode, suddenly need 
 
 ### TODOs:
 - [x] Detect video and invert color
-- [ ] somehow check if the major part of vid is white
+- [ ] somehow check if the major part of current frame of vid is white
 
 Imagine a tool that detects if a video is in light color more than half, if yes then it inverts it smartly not just straight. 
