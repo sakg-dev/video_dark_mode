@@ -39,7 +39,7 @@ for (let vid of vids) {
     canva.style.visibility = "hidden";
     document.body.prepend(canva)
 
-    const ctx = canva.getContext("2d");
+    const ctx = canva.getContext("2d", { willReadFrequently: true });
 
     let width = canva.width;
     let height = canva.height;
